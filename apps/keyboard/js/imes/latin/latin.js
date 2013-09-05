@@ -540,7 +540,7 @@
     switch (keycode) {
     case SPACE:
       if (Date.now() - lastSpaceTimestamp < DOUBLE_SPACE_TIME)
-        fixPunctuation(PERIOD);
+        fixPunctuation(PERIOD, SPACE);
       else
         handleKey(keycode);
       break;
@@ -560,12 +560,15 @@
     }
 
     // In both the space space and the space period case we call this function
-    function fixPunctuation(keycode) {
+    // Second argument is the character reverting to if cancelling auto
+    // punctuation
+    function fixPunctuation(keycode, revertToKeycode) {
       keyboard.sendKey(BACKSPACE);
       keyboard.sendKey(keycode);
       keyboard.sendKey(SPACE);
+      var punctuationChar = String.fromCharCode(keycode);
 
-      var newtext = String.fromCharCode(keycode) + ' ';
+      var newtext = punctuationChar + ' ';
 
       inputText = inputText.substring(0, cursor - 1) +
         newtext +
@@ -573,7 +576,7 @@
       cursor++;
 
       // Remember this change so we can revert it on backspace
-      revertTo = ' ';
+      revertTo = ' ' + String.fromCharCode(revertToKeycode || keycode);
       revertFrom = newtext;
       justAutoCorrected = false;
     }
