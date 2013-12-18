@@ -346,14 +346,9 @@ var Widget = (function() {
           meta.innerHTML = '';
           meta.appendChild(formatTimeHTML(stats.timestamp));
         }
-        checkDataUsageNotification(settings, stats.mobile.total,
-          // inform driver in system we are finished to update the widget
-          function _done() {
-            debug('Data usage notification checked!');
-            hashMark = 1 - hashMark; // toogle between 0 and 1
-            window.location.hash = '#updateDone#' + hashMark;
-          }
-        );
+        // No se si estas dos lineas son necesarias.
+ //       hashMark = 1 - hashMark; // toogle between 0 and 1
+//        window.location.hash = '#updateDone#0' ;
       });
 
       // Content for balance or telephony

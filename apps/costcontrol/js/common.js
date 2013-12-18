@@ -94,6 +94,14 @@ function resetData(mode, onsuccess, onerror) {
     mobileClearRequest = navigator.mozNetworkStats
                                           .clearStats(currentSimcardInterface);
     mobileClearRequest.onerror = getOnErrorFor('simcard');
+    mobileClearRequest.onsuccess = function _restoreDataLimitAlarm() {
+      ConfigManager.requestSettings(function _onSettings(settings) {
+        if (settings.dataLimit) {
+          Common.addAlarm(currentDataInterface, getDataLimit(settings));
+          ConfigManager.setOption({ 'dataUsageNotified': false });
+        }
+      });
+    };
   }
 
     // Set last Reset
@@ -436,6 +444,88 @@ var Common = {
       if (onsuccess) {
         onsuccess(iccId);
       }
+    };
+  },
+  addAlarm: function _addAlarm(networkInterface, value, onsuccess, onerror) {
+    if (!networkInterface) {
+      console.error('Error, the network interface is not defined when trying ' +
+                      'to add an alarm');
+      if (onerror) {
+        onerror();
+      }
+      return;
+    }
+    if (value === null || typeof value === 'undefined') {
+      console.error('Limit value is undefined, impossible add an alarm');
+      if (onerror) {
+        onerror();
+      }
+      return;
+    }
+    console.log('estoy en addAlarm' + value);
+    console.log(JSON.stringify(networkInterface));
+    var request = navigator.mozNetworkStats.addAlarm(networkInterface,
+                                                            value);
+    request.onsuccess = function success() {
+      console.log('Set alarm success: ' + request.result);
+      if (onsuccess) {
+        onsuccess();
+      }
+    };
+    request.onerror = function error(e) {
+      console.error('Set alarm error' + JSON.stringify(e));
+      if (onerror) {
+        onerror();
+      }
+    };
+
+  },
+  updateAlarm: function _updateAlarm(value, onsuccess, onerror) {
+    console.log('Entro con ' + value);
+    var currentDataInterface = this.getDataSIMInterface();
+    if (currentDataInterface) {
+      this.clearAlarms(currentDataInterface,
+                  this.addAlarm.bind(null, currentDataInterface, value));
+    }
+  },
+  clearAlarms: function _clearAlarms(networkInterface, callback) {
+    if (!networkInterface) {
+      console.error('Error, the network interface is not defined when trying ' +
+                      'to remove alarms');
+      return;
+    }
+    var request = navigator.mozNetworkStats.getAllAlarms(networkInterface);
+    request.onsuccess = function success() {
+      console.log('Get alarm success: ' + JSON.stringify(request.result));
+      var alarmList = request.result;
+      var pendingRequest = alarmList.length;
+      if (pendingRequest === 0 && callback) {
+        callback();
+      }
+
+      function checkForCompletion() {
+        pendingRequest--;
+        if (pendingRequest === 0 && callback) {
+          callback();
+        }
+      }
+
+       // Load the fist slot with iccId
+      for (var i = 0; i < alarmList.length; i++) {
+        if (alarmList[i] && alarmList[i].alarmId) {
+          var rA = navigator.mozNetworkStats.removeAlarms(alarmList[i].alarmId);
+          rA.onsuccess = checkForCompletion;
+          rA.onerror = function _onErrorRemoveAlarm() {
+            console.error('Error when trying to remove the alarm ' +
+                                                          alarmList[i].alarmId);
+            checkForCompletion();
+          };
+        }
+      }
+    };
+
+    request.onerror = function error() {
+      console.error('Error when trying to get alarms from the API');
     };
   }
 };

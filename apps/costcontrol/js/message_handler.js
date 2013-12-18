@@ -262,7 +262,6 @@
           );
         });
         break;
-
       case 'nextReset':
         ConfigManager.requestSettings(function _onSettings(settings) {
           resetAll(function updateNextResetAndClose() {
@@ -275,6 +274,32 @@
         break;
     }
   }
+
+  navigator.mozSetMessageHandler('networkstats-alarm', function onAlarm(alarm) {
+    console.log('Entro en el listener de networkstats-alarm');
+    debug('================================');
+    debug('--- ' + JSON.stringify(alarm) + ' ---');
+    debug('================================');
+
+    var iconURL = NotificationHelper.getIconURI(app);
+    iconURL += '?dataUsage';
+
+    var goToDataUsage;
+    if (!inStandAloneMode()) {
+      goToDataUsage = function _goToDataUsage() {
+        app.launch();
+        window.parent.CostControlApp.showDataUsageTab();
+      };
+    }
+
+    var limitText = formatData(smartRound(limit));
+    var title = _('data-limit-notification-title2', { limit: limitText });
+    var message = _('data-limit-notification-text2');
+    NotificationHelper.send(title, message, iconURL, goToDataUsage);
+    ConfigManager.setOption({ 'dataUsageNotified': true });
+    return;
+
+  });
 
   function checkDataUsageNotification(settings, usage, callback) {
     // XXX: Hack hiding the message class in the icon URL
@@ -295,16 +320,9 @@
       }
 
       var limit = getDataLimit(settings);
+      //Aca se lanza la notificación, esto tiene que ir en el listener
       if (settings.dataLimit) {
-        if (usage >= limit && !settings.dataUsageNotified) {
-          var limitText = formatData(smartRound(limit));
-          var title = _('data-limit-notification-title2', { limit: limitText });
-          var message = _('data-limit-notification-text2');
-          NotificationHelper.send(title, message, iconURL, goToDataUsage);
-          ConfigManager.setOption({ 'dataUsageNotified': true }, callback);
-          return true;
-
-        } else if (usage < limit && settings.dataUsageNotified) {
+        if (usage < limit && settings.dataUsageNotified) {
           ConfigManager.setOption({ 'dataUsageNotified': false }, callback);
           return false;
         }

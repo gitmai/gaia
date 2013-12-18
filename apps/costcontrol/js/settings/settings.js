@@ -9,6 +9,7 @@
  // Import global objects from parent window
  var ConfigManager = window.parent.ConfigManager;
  var CostControl = window.parent.CostControl;
+ var Common = window.parent.Common;
  var Formatting = window.parent.Formatting;
 
  // Import global functions from parent window
@@ -17,6 +18,7 @@
  var formatData = window.parent.formatData;
  var roundData = window.parent.roundData;
  var resetData = window.parent.resetData;
+ var getDataLimit = window.parent.getDataLimit;
  var resetTelephony = window.parent.resetTelephony;
  var localizeWeekdaySelector = window.parent.localizeWeekdaySelector;
  var computeTelephonyMinutes = window.parent.computeTelephonyMinutes;
@@ -69,6 +71,23 @@ var Settings = (function() {
       configureTelephonyReset();
       configureDataResets();
       addDoneConstrains();
+
+      // Add an observer on dataLimit switch to active o deactivate alarms
+      ConfigManager.observe(
+        'dataLimit',
+        function _onDataLimitChange(value, old, key, settings) {
+          console.log('Ini --> value' + value);
+          var currentDataInterface = Common.getDataSIMInterface();
+          if (!value) {
+            console.log('No debe haber alarmas');
+            Common.clearAlarms(currentDataInterface);
+          } else {
+            Common.addAlarm(currentDataInterface, getDataLimit(settings));
+            console.log('value==>' + getDataLimit(settings));
+          }
+        },
+        false
+      );
 
       // Update layout when changing plantype
       ConfigManager.observe('plantype', updateUI, true);
