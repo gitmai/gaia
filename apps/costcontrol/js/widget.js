@@ -244,6 +244,12 @@ var Widget = (function() {
 
   var hashMark = 0;
   function updateUI(updateOnlyDataUsage) {
+    var request = navigator.mozNetworkStats.getAllAlarms(
+      {'type': 1, 'id': '8934075100210526976'});
+    request.onsuccess = function success() {
+      console.log('List Alarms on Update: ' + JSON.stringify(request.result));
+    };
+
     ConfigManager.requestAll(function _onInfo(configuration, settings) {
       var mode = ConfigManager.getApplicationMode();
       debug('Widget UI mode:', mode);

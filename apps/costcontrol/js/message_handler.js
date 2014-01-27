@@ -277,9 +277,9 @@
 
   navigator.mozSetMessageHandler('networkstats-alarm', function onAlarm(alarm) {
     console.log('Entro en el listener de networkstats-alarm');
-    debug('================================');
-    debug('--- ' + JSON.stringify(alarm) + ' ---');
-    debug('================================');
+    console.log('================================');
+    console.log('--- ' + JSON.stringify(alarm) + ' ---');
+    console.log('================================');
 
     var iconURL = NotificationHelper.getIconURI(app);
     iconURL += '?dataUsage';
