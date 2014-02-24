@@ -21,6 +21,7 @@
       'js/utils/debug.js',
       'js/utils/formatting.js',
       'js/utils/toolkit.js',
+      'js/sim_manager.js',
       'js/common.js',
       'js/costcontrol.js',
       'js/costcontrol_init.js',
@@ -31,7 +32,7 @@
       'js/settings/autosettings.js'
     ];
     LazyLoader.load(SCRIPTS_NEEDED, function onScriptsLoaded() {
-      Common.loadDataSIMIccId(_onIccReady);
+      SimManager.loadDataSimIcc(_onIccReady);
       Common.loadNetworkInterfaces();
 
       parent.postMessage({
@@ -46,7 +47,7 @@
   function _onIccReady(iccid) {
     var stepsLeft = 2;
     // Load iccInfo of current data simcard
-    var dataSimIccInfo = Common.dataSimIcc;
+    var dataSimIccInfo = SimManager.dataSim.icc;
 
     // No SIM
     if (!dataSimIccInfo || dataSimIccInfo.cardState === 'absent') {

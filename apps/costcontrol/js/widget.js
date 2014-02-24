@@ -26,8 +26,8 @@ var Widget = (function() {
       console.error('No mozMobileConnection available');
       return;
     }
-    var iccid = Common.dataSimIccId;
-    var dataSimIccInfo = Common.dataSimIcc;
+    var iccid = SimManager.dataSim.iccId;
+    var dataSimIccInfo = SimManager.dataSim.icc;
     var cardState = checkCardState();
 
     if (!dataSimIccInfo || !dataSimIccInfo.iccInfo) {
@@ -59,7 +59,7 @@ var Widget = (function() {
   // special situations such as 'pin/puk locked' or 'absent'.
   function checkCardState() {
     var state, cardState;
-    state = cardState = Common.dataSimIcc.cardState;
+    state = cardState = SimManager.dataSim.icc.cardState;
 
     // SIM is absent
     if (!cardState || cardState === 'absent') {
@@ -132,7 +132,7 @@ var Widget = (function() {
     document.addEventListener('visibilitychange',
       function _onVisibilityChange(evt) {
         if (!document.hidden && initialized) {
-          checkCardState(Common.dataSimIccId);
+          checkCardState(SimManager.dataSim.iccId);
           updateUI();
         }
       }
@@ -166,7 +166,7 @@ var Widget = (function() {
 
     // Refresh UI when the user changes the SIM for data connections
     SettingsListener.observe('ril.data.defaultServiceId', 0, function() {
-      Common.loadDataSIMIccId(updateUI.bind(null, true));
+      SimManager.loadDataSimIcc(updateUI.bind(null, true));
     });
 
     initialized = true;
@@ -447,7 +447,7 @@ var Widget = (function() {
     }
   }
   function initWidget() {
-    Common.loadDataSIMIccId(checkSIMStatus, function _errorNoSim() {
+    SimManager.loadDataSimIcc(checkSIMStatus, function _errorNoSim() {
       console.warn('Error when trying to get the ICC ID');
       showSimError('no-sim2');
     });
@@ -457,7 +457,7 @@ var Widget = (function() {
           var iccManager = window.navigator.mozIccManager;
           iccManager.addEventListener('iccdetected', function _oniccdetected() {
             iccManager.removeEventListener('iccdetected', _oniccdetected);
-            Common.loadDataSIMIccId(checkSIMStatus);
+            SimManager.loadDataSimIcc(checkSIMStatus);
           });
           showSimError('no-sim2');
         }
@@ -476,6 +476,7 @@ var Widget = (function() {
         'js/utils/toolkit.js',
         'js/common.js',
         'js/costcontrol.js',
+        'js/sim_manager.js',
         'js/costcontrol_init.js',
         'js/config/config_manager.js',
         'js/settings/networkUsageAlarm.js',

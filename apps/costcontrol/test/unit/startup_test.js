@@ -7,6 +7,7 @@ mocha.setup({ globals: ['0', '1'] });
 require('/shared/test/unit/mocks/mock_lazy_loader.js');
 requireApp('costcontrol/test/unit/mock_debug.js');
 requireApp('costcontrol/test/unit/mock_common.js');
+requireApp('costcontrol/test/unit/mock_sim_manager.js');
 requireApp('costcontrol/test/unit/mock_moz_l10n.js');
 requireApp('costcontrol/test/unit/mock_moz_mobile_connection.js');
 requireApp('costcontrol/test/unit/mock_settings_listener.js');
@@ -23,6 +24,7 @@ requireApp('costcontrol/js/common.js');
 require('/shared/test/unit/load_body_html_helper.js');
 
 var realCommon,
+    realSimManager,
     realMozMobileConnection,
     realMozL10n,
     realSettingsListener,
@@ -34,6 +36,10 @@ var realCommon,
 
 if (!this.Common) {
   this.Common = null;
+}
+
+if (!this.SimManager) {
+  this.SimManager = null;
 }
 
 if (!this.navigator.mozMobileConnection) {
@@ -75,6 +81,8 @@ suite('Application Startup Modes Test Suite >', function() {
   suiteSetup(function() {
     realCommon = window.Common;
 
+    realSimManager = window.SimManager;
+
     realMozMobileConnection = window.navigator.mozMobileConnection;
 
     realMozL10n = window.navigator.mozL10n;
@@ -115,6 +123,7 @@ suite('Application Startup Modes Test Suite >', function() {
 
   suiteTeardown(function() {
     window.Common = realCommon;
+    window.SimManager = realSimManager;
     window.navigator.mozMobileConnection = realMozMobileConnection;
     window.navigator.mozL10n = realMozL10n;
     window.CostControl = realCostControl;
@@ -197,8 +206,9 @@ suite('Application Startup Modes Test Suite >', function() {
   function setupCardState(icc) {
     window.Common = new MockCommon({ isValidICCID: true });
     window.CostControl = new MockCostControl();
+    window.SimManager = new MockSimManager();
     window.navigator.mozMobileConnection = new MockMozMobileConnection({});
-    Common.dataSimIcc = icc;
+    SimManager.dataSim.icc = icc;
   }
 
   test('SIM is not ready', function(done) {
@@ -285,7 +295,7 @@ suite('Application Startup Modes Test Suite >', function() {
       fakeSettings: { fte: false },
       applicationMode: applicationMode
     });
-    Common.dataSimIcc = {cardState: 'ready'};
+    SimManager.dataSim.icc = {cardState: 'ready'};
   }
 
   test('Layout: Data Usage Only', function(done) {

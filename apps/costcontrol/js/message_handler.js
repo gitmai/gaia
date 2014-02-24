@@ -545,9 +545,9 @@
       window.parent.dispatchEvent(readyEvent);
     });
   }
-  if (Common.dataSimIccIdLoaded) {
+  if (SimManager.dataSim.loaded) {
     _getCCInstance();
   } else {
-    Common.loadDataSIMIccId(_getCCInstance);
+    SimManager.loadDataSimIcc(_getCCInstance);
   }
 }());

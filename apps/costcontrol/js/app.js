@@ -46,9 +46,8 @@ var CostControlApp = (function() {
   // application shows a dialog informing about the current situation of the
   // SIM. Once ready, callback is executed.
   function waitForSIMReady(callback) {
-    Common.loadDataSIMIccId(function _onIccId(iccid) {
-      var iccid = Common.dataSimIccId;
-      var dataSimIccInfo = Common.dataSimIcc;
+    SimManager.loadDataSimIcc(function _onIccId(iccid) {
+      var dataSimIccInfo = SimManager.dataSim.icc;
       var cardState = dataSimIccInfo && dataSimIccInfo.cardState;
 
       // SIM not ready
@@ -281,7 +280,8 @@ var CostControlApp = (function() {
     // Refresh UI when the user changes the SIM for data connections
     SettingsListener.observe('ril.data.defaultServiceId', 0, function() {
       if (!isFirstCall) {
-        clearLastSimScenario(Common.loadDataSIMIccId.bind(null, startApp));
+        clearLastSimScenario(SimManager.loadDataSimIcc.bind(SimManager,
+                                                            startApp));
       } else {
         isFirstCall = false;
       }
@@ -420,6 +420,7 @@ var CostControlApp = (function() {
         'js/utils/formatting.js',
         'js/utils/toolkit.js',
         'js/settings/networkUsageAlarm.js',
+        'js/sim_manager.js',
         'js/common.js',
         'js/costcontrol.js',
         'js/costcontrol_init.js',

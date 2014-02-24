@@ -68,7 +68,7 @@ var ConfigManager = (function() {
 
   // Load the operator configuration according to MCC_MNC pair
   function requestConfiguration(callback) {
-    var currentDataIcc = Common.dataSimIcc;
+    var currentDataIcc = SimManager.dataSim.icc;
     if (!currentDataIcc || !currentDataIcc.iccInfo) {
       console.error('No iccInfo available');
       return;
@@ -102,7 +102,7 @@ var ConfigManager = (function() {
   }
 
   function getConfigFilePath() {
-    var currentDataIcc = Common.dataSimIcc;
+    var currentDataIcc = SimManager.dataSim.icc;
     var mcc = currentDataIcc.iccInfo.mcc;
     var mnc = currentDataIcc.iccInfo.mnc;
     var key = mcc + '_' + mnc;
@@ -155,7 +155,7 @@ var ConfigManager = (function() {
   var NO_ICCID = 'NOICCID';
   var settings;
   function requestSettings(callback) {
-    var currentICCID = Common.dataSimIccId || NO_ICCID;
+    var currentICCID = SimManager.dataSim.iccId || NO_ICCID;
     asyncStorage.getItem(currentICCID, function _wrapGetItem(localSettings) {
       // No entry: set defaults
       try {
@@ -219,7 +219,7 @@ var ConfigManager = (function() {
       }
     }
 
-    var currentICCID = Common.dataSimIccId || NO_ICCID;
+    var currentICCID = SimManager.dataSim.iccId || NO_ICCID;
     asyncStorage.setItem(currentICCID, JSON.stringify(settings),
       function _onSet() {
         requestSettings(function _onSettings(settings) {

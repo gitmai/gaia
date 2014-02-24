@@ -19,8 +19,6 @@ var MockCommon = function(config) {
   return {
     COST_CONTROL_APP: 'app://costcontrol.gaiamobile.org',
     allNetworkInterfaces: {},
-    dataSimIccId: null,
-    dataSimIcc: null,
     isValidICCID: function(iccid) {
       assert.isDefined(
         config.isValidICCID,
@@ -69,14 +67,6 @@ var MockCommon = function(config) {
     loadNetworkInterfaces: function() {
       setTimeout(function() {
         Common.allNetworkInterfaces = allInterfacesFake;
-      }, 0);
-    },
-    loadDataSIMIccId: function(onsuccess, onerror) {
-      setTimeout(function() {
-        Common.dataSimIccId = allInterfacesFake[1].id;
-        if (typeof onsuccess === 'function') {
-          onsuccess(Common.dataSimIccId);
-        }
       }, 0);
     }
   };

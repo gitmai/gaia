@@ -112,11 +112,6 @@ suite('Cost Control Common >', function() {
     };
   }
 
-  setup(function() {
-    Common.dataSimIccIdLoaded = false;
-    Common.dataSimIccId = null;
-  });
-
   test('isValidICCID', function() {
     assert.isTrue(!Common.isValidICCID());
     assert.isTrue(!Common.isValidICCID(null));
@@ -135,78 +130,6 @@ suite('Cost Control Common >', function() {
         assert.equal(Common.allNetworkInterfaces[1].type, MobileInterfaceType);
         assert.equal(Common.allNetworkInterfaces[1].id,
                       MockAllNetworkInterfaces[1].id);
-        done();
-      }
-    );
-  });
-
-  test('loadIccDataSIM() works ok without settings', function(done) {
-    MockNavigatorMozMobileConnections[0] = {
-      iccId: MockAllNetworkInterfaces[1].id
-    };
-    Common.loadDataSIMIccId(
-      function() {
-        assert.isTrue(Common.dataSimIccIdLoaded);
-        assert.equal(Common.dataSimIccId,
-                     MockAllNetworkInterfaces[1].id);
-        done();
-      }
-    );
-  });
-
-  test('loadIccDataSIM() fails noICC', function(done) {
-    MockNavigatorSettings.mSettings['ril.data.defaultServiceId'] = 0;
-    MockNavigatorMozMobileConnections[0] = {
-      iccId: null
-    };
-    Common.loadDataSIMIccId(function() { },
-      function _onError() {
-        assert.isFalse(Common.dataSimIccIdLoaded);
-        assert.isNull(Common.dataSimIccId);
-        done();
-      }
-    );
-  });
-
-  test('loadIccDataSIM() works correctly', function(done) {
-    MockNavigatorSettings.mSettings['ril.data.defaultServiceId'] = 0;
-    MockNavigatorMozMobileConnections[0] = {
-      iccId: Common.allNetworkInterfaces[1].id
-    };
-    Common.loadDataSIMIccId(
-      function() {
-        assert.isTrue(Common.dataSimIccIdLoaded);
-        assert.equal(Common.dataSimIccId,
-                     Common.allNetworkInterfaces[1].id);
-        done();
-      }
-    );
-  });
-
-  test('loadIccDataSIM() works ok when settings request fails', function(done) {
-    sinon.stub(navigator.mozSettings, 'createLock', createLockRequestFails());
-    MockNavigatorMozMobileConnections[0] = {
-      iccId: MockAllNetworkInterfaces[1].id
-    };
-    Common.loadDataSIMIccId(function _onSuccess() {
-      assert.isTrue(Common.dataSimIccIdLoaded);
-      assert.equal(Common.dataSimIccId,
-                   MockAllNetworkInterfaces[1].id);
-      navigator.mozSettings.createLock.restore();
-      done();
-    });
-  });
-
-  test('loadIccDataSIM() all fails', function(done) {
-    sinon.stub(navigator.mozSettings, 'createLock', createLockRequestFails());
-    MockNavigatorMozMobileConnections[0] = {
-      iccId: null
-    };
-
-    Common.loadDataSIMIccId(function() { },
-      function _onError() {
-        assert.isFalse(Common.dataSimIccIdLoaded);
-        navigator.mozSettings.createLock.restore();
         done();
       }
     );
