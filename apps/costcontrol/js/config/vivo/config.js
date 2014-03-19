@@ -97,8 +97,8 @@ var VivoConfig = (function() {
 
   return {
     provider: 'Vivo',
-    is_free: true,
-    is_roaming_free: true,
+    is_free: false,
+    is_roaming_free: false,
     credit: { currency: 'R$' },
     balance: {
       destination: '4850',
