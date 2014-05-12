@@ -1,5 +1,5 @@
 /* global ConfigManager, CostControl, debug, Common, asyncStorage, Formatting,
-          NotificationHelper, _, MozActivity, NetworkUsageAlarm */
+          NotificationHelper, _, MozActivity, NetworkUsageAlarm, SmsManager */
 /* exported activity */
 /*jshint -W020 */
 /* The previous directive,ignore the "Read only" errors, that are produced when
@@ -349,72 +349,17 @@
         navigator.mozSetMessageHandler('sms-received', function _onSMS(sms) {
           clearTimeout(closing);
           ConfigManager.requestAll(function _onInfo(configuration, settings) {
-
-            var isBalanceResponse =
-              configuration.balance &&
-              Array.isArray(configuration.balance.senders) &&
-              configuration.balance.senders.indexOf(sms.sender) > -1;
-
-            var isTopupResponse =
-              configuration.topup &&
-              Array.isArray(configuration.topup.senders) &&
-              configuration.topup.senders.indexOf(sms.sender) > -1;
+          var smsManager = new SmsManager(sms, configuration);
 
             // Non expected SMS
-            if (!isBalanceResponse && !isTopupResponse) {
+            if (!smsManager.smsHasValidSender() ||
+                (smsManager.isUnexpectedSms())) {
               closeIfProceeds();
               return;
             }
+            smsManager.removeSms();
 
-            // Parse the message
-            debug('Parsing received SMS');
-            var isBalance, isConfirmation, isError;
-            isBalance = isConfirmation = isError = false;
-
-            debug('Trying to recognize balance SMS');
-            var description = new RegExp(configuration.balance.regexp);
-            var balanceData = sms.body.match(description);
-
-            if (!balanceData) {
-              debug('Trying to recognize zero balance SMS');
-              // Some carriers use another response messages format
-              // for zero balance
-              var zeroDescription = configuration.balance.zero_regexp ?
-                           new RegExp(configuration.balance.zero_regexp) : null;
-              if (zeroDescription && zeroDescription.test(sms.body)) {
-                balanceData = ['0.00', '0', '0'];
-              }
-            }
-            isBalance = !!balanceData;
-
-            if (!isBalance || balanceData.length < 2) {
-              console.warn('Impossible to parse balance message.');
-
-              debug('Trying to recognize TopUp confirmation SMS');
-              description = new RegExp(configuration.topup.confirmation_regexp);
-              isConfirmation = !!sms.body.match(description);
-              if (!isConfirmation) {
-                console.warn('Impossible to parse TopUp confirmation message.');
-
-                debug('Trying to recognize TopUp error SMS');
-                description =
-                  new RegExp(configuration.topup.incorrect_code_regexp);
-                isError = !!sms.body.match(description);
-                if (!isError) {
-                  console.warn('Impossible to parse TopUp confirmation msg.');
-                }
-              }
-
-            }
-
-            if (!isBalance && !isConfirmation && !isError) {
-              closeIfProceeds();
-              return;
-            }
-
-            // TODO: Remove the SMS
-
-            if (isBalance) {
+            function processBalance(balanceData) {
               // Compose new balance
               var integer = balanceData[1].replace(/[^0-9]/g, '');
               var decimal = balanceData[2] || '0';
@@ -439,8 +384,9 @@
                                                    closeIfProceeds);
                 }
               );
-            } else if (isConfirmation) {
-              // Store SUCCESS for TopIp and sync
+
+            }
+            function processTopUp() {
               navigator.mozAlarms.remove(settings.waitingForTopUp);
               debug('TopUp timeout:', settings.waitingForTopUp, 'removed');
               ConfigManager.setOption(
@@ -456,7 +402,8 @@
                   closeIfProceeds();
                 }
               );
-            } else if (isError) {
+            }
+            function processError() {
               // Store ERROR for TopUp and sync
               settings.errors.INCORRECT_TOPUP_CODE = true;
               navigator.mozAlarms.remove(settings.waitingForTopUp);
@@ -475,6 +422,16 @@
                   sendIncorrectTopUpNotification(closeIfProceeds);
                 }
               );
+            }
+
+            if (smsManager.isBalance) {
+              processBalance(smsManager.balanceData);
+            } else if (smsManager.isConfirmation) {
+              // Store SUCCESS for TopIp and sync
+              processTopUp();
+            } else if (smsManager.isError) {
+              // Store ERROR for TopUp and sync
+              processError();
             }
           });
         });
