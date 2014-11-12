@@ -53,9 +53,16 @@ function dataLimitConfigurer(guiWidget, settings, viewManager, widgetRoot) {
     );
   }
 
+  function insertCharAt(charCode, idx, string) {
+    return string.substr(0, idx) +
+          String.fromCharCode(charCode) + string.substr(idx);
+  }
+
   // Prevent undesired characters like '-'
   dataLimitInput.addEventListener('keypress',
     function cc_onKeypress(event) {
+      var isRemoveKey = REMOVE_CHAR_CODE
+        .indexOf(event.charCode || event.keyCode) !== -1;
       if ((event.charCode === MINUS_CHAR_CODE) ||
           (event.charCode === COMMA_CHAR_CODE) ||
           (event.charCode === DOT_CHAR_CODE &&
@@ -64,6 +71,17 @@ function dataLimitConfigurer(guiWidget, settings, viewManager, widgetRoot) {
         event.preventDefault();
         event.stopPropagation();
         return;
+      } else if (!isRemoveKey) {
+        var lowLimitInput =  event.target;
+        var lowLimitValue = insertCharAt(event.charCode,
+                                         lowLimitInput.selectionStart,
+                                         lowLimitInput.value);
+        var isNumericLowLimit = !Number.isNaN(lowLimitValue);
+        if (!isNumericLowLimit || !isValidFormat(lowLimitValue)) {
+          event.preventDefault();
+          event.stopPropagation();
+          return;
+        }
       }
     }
   );
@@ -74,6 +92,7 @@ function dataLimitConfigurer(guiWidget, settings, viewManager, widgetRoot) {
             numberDataLimit > 0 &&
             DATA_LIMIT_NUMERIC_FORMAT.test(numberDataLimit));
   }
+
   // Disable OK button when dataLimitInput not matches any positive real number
   // (up to three digits length), with optional decimal point, accepting up
   // to 2 decimal places.
