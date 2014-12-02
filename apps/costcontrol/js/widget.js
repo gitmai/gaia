@@ -93,47 +93,66 @@ var Widget = (function() {
   function setupWidget() {
     var mode = ConfigManager.getApplicationMode();
     var isDataUsageOnly = (mode === 'DATA_USAGE_ONLY');
-    var isBalanceEnabled = !isDataUsageOnly;
+    var isOperatorCustom = (mode === 'OPERATOR_CUSTOM');
+    var isBalanceEnabled = !isDataUsageOnly && !isOperatorCustom;
 
     // HTML entities
     widget = document.getElementById('cost-control');
     leftPanel = document.getElementById('left-panel');
     rightPanel = document.getElementById('right-panel');
     fte = document.getElementById('fte-view');
+    views.leftPanel = leftPanel;
     views.dataUsage = document.getElementById('datausage-view');
     views.limitedDataUsage = document.getElementById('datausage-limit-view');
-    views.telephony = document.getElementById('telephony-view');
-    views.balance = document.getElementById('balance-view');
 
-    if (isBalanceEnabled) {
-      // Use observers to handle not on-demand updates
-      ConfigManager.observe('lastBalance', onBalance, true);
-      ConfigManager.observe('waitingForBalance', onErrors, true);
-      ConfigManager.observe('errors', onErrors, true);
+    if (!isBalanceEnabled) {
+      LazyLoader.load(document.getElementById('right-panel'),
+        function _loadRightPanel() {
+          rightPanel = document.getElementById('right-panel');
+          views.rightPanel = rightPanel;
+          views.telephony = document.getElementById('telephony-view');
+          views.balance = document.getElementById('balance-view');
 
-      LazyLoader.load('js/views/BalanceView.js', function() {
-        // Subviews
-        var balanceConfig = ConfigManager.configuration.balance;
-        balanceView = new BalanceView(
-          document.getElementById('balance-credit'),
-          document.querySelector('#balance-credit + .meta'),
-          balanceConfig ? balanceConfig.minimum_delay : undefined
-        );
-      });
+          // Use observers to handle not on-demand updates
+          ConfigManager.observe('lastBalance', onBalance, true);
+          ConfigManager.observe('waitingForBalance', onErrors, true);
+          ConfigManager.observe('errors', onErrors, true);
 
-      // Open application with the proper view
-      views.balance.addEventListener('click',
-        function _openCCBalance() {
-          activity = new MozActivity({ name: 'costcontrol/balance' });
-        }
-      );
-      views.telephony.addEventListener('click',
-        function _openCCTelephony() {
-          activity = new MozActivity({ name: 'costcontrol/telephony' });
+          LazyLoader.load('js/views/BalanceView.js', function() {
+            // Subviews
+            var balanceConfig = ConfigManager.configuration.balance;
+            balanceView = new BalanceView(
+              document.getElementById('balance-credit'),
+              document.querySelector('#balance-credit + .meta'),
+              balanceConfig ? balanceConfig.minimum_delay : undefined
+            );
+          });
+
+          // Open application with the proper view
+          views.balance.addEventListener('click',
+            function _openCCBalance() {
+              activity = new MozActivity({ name: 'costcontrol/balance' });
+            }
+          );
+
+          views.telephony.addEventListener('click',
+            function _openCCTelephony() {
+              activity = new MozActivity({ name: 'costcontrol/telephony' });
+            }
+          );
         }
       );
     }
 
+    if (isOperatorCustom) {
+      views.rightPanel = rightPanel;
+      // Open application with the proper view
+      views.rightPanel.addEventListener('click',
+        function _openCCBalance() {
+          activity = new MozActivity({ name: 'costcontrol/balance' });
+        }
+      );
+    }
     // Use observers to handle not on-demand updates
     ConfigManager.observe('lastCompleteDataReset', onReset, true);
     ConfigManager.observe('lastTelephonyReset', onReset, true);
@@ -259,7 +278,8 @@ var Widget = (function() {
     var keyLookup = {
         PREPAID: 'widget-authed-sim',
         POSTPAID: 'widget-authed-sim',
-        DATA_USAGE_ONLY: 'widget-nonauthed-sim'
+        DATA_USAGE_ONLY: 'widget-nonauthed-sim',
+        OPERATOR_CUSTOM: 'widget-nonauthed-sim'
     };
     var simKey = keyLookup[mode];
 
@@ -281,6 +301,7 @@ var Widget = (function() {
 
       var isPrepaid = (mode === 'PREPAID');
       var isDataUsageOnly = (mode === 'DATA_USAGE_ONLY');
+      var isOperatorCustom = (mode === 'OPERATOR_CUSTOM');
 
       // Show fte mode widget
       if (settings.fte) {
@@ -293,14 +314,10 @@ var Widget = (function() {
       widget.hidden = true;
       fte.hidden = true;
       leftPanel.hidden = false;
-      rightPanel.hidden = false;
 
       var isLimited = settings.dataLimit;
       views.dataUsage.hidden = isLimited;
       views.limitedDataUsage.hidden = !isLimited;
-
-      // Always data usage
-      rightPanel.hidden = isDataUsageOnly;
 
       // And the other view if applies...
       if (isDataUsageOnly) {
@@ -308,10 +325,14 @@ var Widget = (function() {
         widget.hidden = false;
 
       } else {
+        rightPanel.hidden = false;
         widget.classList.remove('full');
-        views.balance.hidden = !isPrepaid;
-        views.telephony.hidden = isPrepaid;
         widget.hidden = false;
+
+        if (!isOperatorCustom) {
+          views.balance.hidden = !isPrepaid;
+          views.telephony.hidden = isPrepaid;
+        }
       }
 
       // Content for data statistics
@@ -506,7 +527,7 @@ var Widget = (function() {
 
   return {
     init: function() {
-      var SCRIPTS_NEEDED = [
+      var RESOURCES_NEEDED = [
         'js/common.js',
         'js/utils/toolkit.js'
       ];
@@ -514,17 +535,17 @@ var Widget = (function() {
       if (!window.navigator.mozMobileConnections ||
           !window.navigator.mozIccManager ||
           !window.navigator.mozNetworkStats) {
-        LazyLoader.load(SCRIPTS_NEEDED, function _showError() {
+        LazyLoader.load(RESOURCES_NEEDED, function _showError() {
           Widget.showSimError('no-sim2');
         });
       } else {
-        SCRIPTS_NEEDED = [
+        RESOURCES_NEEDED = [
           'js/sim_manager.js',
           'js/common.js',
           'js/utils/toolkit.js',
           'js/utils/debug.js'
         ];
-        LazyLoader.load(SCRIPTS_NEEDED, initWidget);
+        LazyLoader.load(RESOURCES_NEEDED, initWidget);
       }
     },
     showSimError: _showSimError
